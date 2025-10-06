@@ -5,7 +5,7 @@ const API_URL = '/api';
 let currentSessionId = null;
 
 // DOM elements
-let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
+let chatMessages, chatInput, sendButton, totalCourses, courseTitles, newChatButton;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton = document.getElementById('sendButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
-    
+    newChatButton = document.getElementById('newChatButton');
+
     setupEventListeners();
     createNewSession();
     loadCourseStats();
@@ -28,8 +29,10 @@ function setupEventListeners() {
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
-    
-    
+
+    // New chat button
+    newChatButton.addEventListener('click', startNewChat);
+
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -74,7 +77,11 @@ async function sendMessage() {
         if (!response.ok) throw new Error('Query failed');
 
         const data = await response.json();
-        
+
+        // Debug: Log the received data
+        console.log('Received data:', data);
+        console.log('Sources:', data.sources);
+
         // Update session ID if new
         if (!currentSessionId) {
             currentSessionId = data.session_id;
@@ -115,25 +122,47 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}${isWelcome ? ' welcome-message' : ''}`;
     messageDiv.id = `message-${messageId}`;
-    
+
     // Convert markdown to HTML for assistant messages
     const displayContent = type === 'assistant' ? marked.parse(content) : escapeHtml(content);
-    
+
     let html = `<div class="message-content">${displayContent}</div>`;
-    
+
     if (sources && sources.length > 0) {
+        // Debug: Log sources in addMessage
+        console.log('addMessage sources:', sources);
+        console.log('First source:', sources[0]);
+        console.log('First source type:', typeof sources[0]);
+        console.log('First source.text:', sources[0]?.text);
+
+        // Format sources as clickable links if they have URLs
+        const formattedSources = sources.map(source => {
+            console.log('Processing source:', source, 'Type:', typeof source);
+            if (typeof source === 'object' && source !== null && source.text) {
+                if (source.url) {
+                    return `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer" class="source-link">${escapeHtml(source.text)}</a>`;
+                } else {
+                    return escapeHtml(source.text);
+                }
+            } else {
+                // Fallback for plain string sources
+                console.log('Fallback - converting to string:', source);
+                return escapeHtml(String(source));
+            }
+        }).join(', ');
+
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <div class="sources-content">${formattedSources}</div>
             </details>
         `;
     }
-    
+
     messageDiv.innerHTML = html;
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+
     return messageId;
 }
 
@@ -150,6 +179,11 @@ async function createNewSession() {
     currentSessionId = null;
     chatMessages.innerHTML = '';
     addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
+}
+
+function startNewChat() {
+    createNewSession();
+    chatInput.focus();
 }
 
 // Load course statistics

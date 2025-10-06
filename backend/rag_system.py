@@ -4,8 +4,8 @@ from document_processor import DocumentProcessor
 from vector_store import VectorStore
 from ai_generator import AIGenerator
 from session_manager import SessionManager
-from search_tools import ToolManager, CourseSearchTool
-from models import Course, Lesson, CourseChunk
+from search_tools import ToolManager, CourseSearchTool, CourseOutlineTool
+from models import Course, Lesson, CourseChunk, Source
 
 class RAGSystem:
     """Main orchestrator for the Retrieval-Augmented Generation system"""
@@ -23,6 +23,10 @@ class RAGSystem:
         self.tool_manager = ToolManager()
         self.search_tool = CourseSearchTool(self.vector_store)
         self.tool_manager.register_tool(self.search_tool)
+
+        # Register course outline tool
+        self.outline_tool = CourseOutlineTool(self.vector_store)
+        self.tool_manager.register_tool(self.outline_tool)
     
     def add_course_document(self, file_path: str) -> Tuple[Course, int]:
         """
@@ -127,15 +131,19 @@ class RAGSystem:
         )
         
         # Get sources from the search tool
-        sources = self.tool_manager.get_last_sources()
+        sources_data = self.tool_manager.get_last_sources()
+
+        # Convert dict sources to Source model instances
+        sources = [Source(**src) if isinstance(src, dict) else Source(text=str(src))
+                   for src in sources_data]
 
         # Reset sources after retrieving them
         self.tool_manager.reset_sources()
-        
+
         # Update conversation history
         if session_id:
             self.session_manager.add_exchange(session_id, query, response)
-        
+
         # Return response with sources from tool searches
         return response, sources
     
