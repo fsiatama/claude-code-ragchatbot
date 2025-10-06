@@ -2,6 +2,9 @@
 .env
 backend/.env
 
+.playwright-mcp/
+.gemini/
+
 # Python
 __pycache__/
 *.py[cod]
