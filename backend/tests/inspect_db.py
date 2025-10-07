@@ -14,10 +14,10 @@ import os
 import io
 
 # Set stdout to use UTF-8 encoding to handle check marks
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 # Add parent directory to path to import backend modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from config import config
 from vector_store import VectorStore
@@ -41,9 +41,7 @@ def inspect_database():
     # Initialize vector store
     try:
         vector_store = VectorStore(
-            config.CHROMA_PATH,
-            config.EMBEDDING_MODEL,
-            config.MAX_RESULTS
+            config.CHROMA_PATH, config.EMBEDDING_MODEL, config.MAX_RESULTS
         )
         print("✓ Vector store initialized successfully")
     except Exception as e:
@@ -55,26 +53,27 @@ def inspect_database():
     try:
         catalog_data = vector_store.course_catalog.get()
 
-        if catalog_data and 'ids' in catalog_data:
-            num_courses = len(catalog_data['ids'])
+        if catalog_data and "ids" in catalog_data:
+            num_courses = len(catalog_data["ids"])
             print(f"✓ Number of courses: {num_courses}")
 
             if num_courses > 0:
                 print("\nCourse Titles:")
-                for course_id in catalog_data['ids']:
+                for course_id in catalog_data["ids"]:
                     print(f"  - {course_id}")
 
                 # Sample first course metadata
-                if catalog_data['metadatas']:
+                if catalog_data["metadatas"]:
                     print("\nSample Course Metadata (first course):")
-                    first_meta = catalog_data['metadatas'][0]
+                    first_meta = catalog_data["metadatas"][0]
                     for key, value in first_meta.items():
-                        if key != 'lessons_json':  # Skip JSON dump for readability
+                        if key != "lessons_json":  # Skip JSON dump for readability
                             print(f"  {key}: {value}")
 
-                    if 'lessons_json' in first_meta:
+                    if "lessons_json" in first_meta:
                         import json
-                        lessons = json.loads(first_meta['lessons_json'])
+
+                        lessons = json.loads(first_meta["lessons_json"])
                         print(f"  Number of lessons: {len(lessons)}")
                         if lessons:
                             print(f"  Sample lesson: {lessons[0]}")
@@ -90,13 +89,15 @@ def inspect_database():
     try:
         content_data = vector_store.course_content.get(limit=10)  # Get first 10 chunks
 
-        if content_data and 'ids' in content_data:
-            num_chunks = len(content_data['ids'])
+        if content_data and "ids" in content_data:
+            num_chunks = len(content_data["ids"])
 
             # Get total count
             try:
                 total_data = vector_store.course_content.get()
-                total_chunks = len(total_data['ids']) if total_data and 'ids' in total_data else 0
+                total_chunks = (
+                    len(total_data["ids"]) if total_data and "ids" in total_data else 0
+                )
                 print(f"✓ Total number of chunks: {total_chunks}")
             except:
                 print(f"✓ Number of chunks (sample): {num_chunks}")
@@ -104,8 +105,8 @@ def inspect_database():
             if num_chunks > 0:
                 print("\nSample Chunk Metadata:")
                 for i in range(min(3, num_chunks)):
-                    meta = content_data['metadatas'][i]
-                    chunk_id = content_data['ids'][i]
+                    meta = content_data["metadatas"][i]
+                    chunk_id = content_data["ids"][i]
                     print(f"\n  Chunk {i+1} (ID: {chunk_id}):")
                     print(f"    course_title: {meta.get('course_title', 'N/A')}")
                     print(f"    lesson_number: {meta.get('lesson_number', 'N/A')}")
@@ -114,16 +115,20 @@ def inspect_database():
                 # Sample chunk content with context formatting
                 print("\nSample Chunk Content (checking context formatting):")
                 for i in range(min(2, num_chunks)):
-                    content = content_data['documents'][i]
-                    meta = content_data['metadatas'][i]
-                    print(f"\n  Chunk {i+1} (Lesson {meta.get('lesson_number', 'N/A')}):")
+                    content = content_data["documents"][i]
+                    meta = content_data["metadatas"][i]
+                    print(
+                        f"\n  Chunk {i+1} (Lesson {meta.get('lesson_number', 'N/A')}):"
+                    )
                     print(f"    First 150 chars: {content[:150]}...")
 
                     # Check for context prefix
                     has_lesson_context = content.startswith("Lesson ")
                     has_course_context = content.startswith("Course ")
                     print(f"    Has 'Lesson X content:' prefix: {has_lesson_context}")
-                    print(f"    Has 'Course X Lesson Y content:' prefix: {has_course_context}")
+                    print(
+                        f"    Has 'Course X Lesson Y content:' prefix: {has_course_context}"
+                    )
 
                     if not (has_lesson_context or has_course_context):
                         print(f"    ⚠ WARNING: Chunk missing expected context prefix!")
@@ -180,30 +185,28 @@ def inspect_database():
     try:
         print("\nTest 2: Search with course filter")
         results = vector_store.search(
-            query="computer use",
-            course_name="Building",
-            limit=2
+            query="computer use", course_name="Building", limit=2
         )
 
         if results.error:
             print(f"  ✗ Search returned error: {results.error}")
         elif results.is_empty():
-            print(f"  ⚠ Search returned no results (may be expected if course name doesn't match)")
+            print(
+                f"  ⚠ Search returned no results (may be expected if course name doesn't match)"
+            )
         else:
             print(f"  ✓ Found {len(results.documents)} results")
             for i, meta in enumerate(results.metadata):
-                print(f"  Result {i+1}: {meta.get('course_title')} - Lesson {meta.get('lesson_number')}")
+                print(
+                    f"  Result {i+1}: {meta.get('course_title')} - Lesson {meta.get('lesson_number')}"
+                )
     except Exception as e:
         print(f"  ✗ Search with filter test failed: {e}")
 
     # Test 3: Search with lesson filter
     try:
         print("\nTest 3: Search with lesson number filter")
-        results = vector_store.search(
-            query="introduction",
-            lesson_number=0,
-            limit=2
-        )
+        results = vector_store.search(query="introduction", lesson_number=0, limit=2)
 
         if results.error:
             print(f"  ✗ Search returned error: {results.error}")
@@ -212,7 +215,7 @@ def inspect_database():
         else:
             print(f"  ✓ Found {len(results.documents)} results from lesson 0")
             for i, meta in enumerate(results.metadata):
-                lesson_num = meta.get('lesson_number')
+                lesson_num = meta.get("lesson_number")
                 if lesson_num == 0:
                     print(f"  ✓ Result {i+1}: Correctly filtered to lesson 0")
                 else:
@@ -229,7 +232,7 @@ def inspect_database():
             print(f"✓ Retrieved outline for: {outline.get('course_title')}")
             print(f"  Instructor: {outline.get('instructor', 'N/A')}")
             print(f"  Course Link: {outline.get('course_link', 'N/A')}")
-            lessons = outline.get('lessons', [])
+            lessons = outline.get("lessons", [])
             print(f"  Number of lessons: {len(lessons)}")
             if lessons:
                 print(f"  First lesson: {lessons[0]}")
@@ -244,13 +247,17 @@ def inspect_database():
     print("\nKey Findings:")
 
     try:
-        catalog_count = len(vector_store.course_catalog.get()['ids'])
-        content_count = len(vector_store.course_content.get()['ids'])
+        catalog_count = len(vector_store.course_catalog.get()["ids"])
+        content_count = len(vector_store.course_content.get()["ids"])
 
         if catalog_count == 0:
-            print("  ✗ CRITICAL: No courses in catalog collection - database may be empty!")
+            print(
+                "  ✗ CRITICAL: No courses in catalog collection - database may be empty!"
+            )
         elif catalog_count < 3:
-            print(f"  ⚠ WARNING: Only {catalog_count} course(s) in catalog (expected 4)")
+            print(
+                f"  ⚠ WARNING: Only {catalog_count} course(s) in catalog (expected 4)"
+            )
         else:
             print(f"  ✓ Catalog has {catalog_count} courses")
 
@@ -258,13 +265,17 @@ def inspect_database():
             print("  ✗ CRITICAL: No content chunks - database may be empty!")
         else:
             print(f"  ✓ Content collection has {content_count} chunks")
-            avg_chunks_per_course = content_count / catalog_count if catalog_count > 0 else 0
+            avg_chunks_per_course = (
+                content_count / catalog_count if catalog_count > 0 else 0
+            )
             print(f"    Average chunks per course: {avg_chunks_per_course:.1f}")
 
         # Test a simple search
         test_results = vector_store.search("lesson", limit=1)
         if test_results.is_empty():
-            print("  ✗ CRITICAL: Search returns no results - semantic search may be broken!")
+            print(
+                "  ✗ CRITICAL: Search returns no results - semantic search may be broken!"
+            )
         else:
             print("  ✓ Basic search functionality working")
 

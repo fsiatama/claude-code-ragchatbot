@@ -10,7 +10,7 @@ import sys
 import os
 from unittest.mock import Mock, patch
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from config import config
 from rag_system import RAGSystem
@@ -23,7 +23,7 @@ class TestRealSystem:
     @pytest.fixture
     def rag_with_real_db_mocked_ai(self):
         """Create RAG system with real database but mocked AI generator"""
-        with patch('rag_system.AIGenerator') as MockAIGenerator:
+        with patch("rag_system.AIGenerator") as MockAIGenerator:
             mock_ai = Mock()
             MockAIGenerator.return_value = mock_ai
 
@@ -38,15 +38,17 @@ class TestRealSystem:
 
         # Execute search tool directly
         result = rag.search_tool.execute(
-            query="What is computer use?",
-            course_name="Building"
+            query="What is computer use?", course_name="Building"
         )
 
         # Verify we got results
         assert result is not None
         assert isinstance(result, str)
         assert len(result) > 0
-        assert "Building Towards Computer Use with Anthropic" in result or "computer use" in result.lower()
+        assert (
+            "Building Towards Computer Use with Anthropic" in result
+            or "computer use" in result.lower()
+        )
 
         # Verify sources were tracked
         assert len(rag.search_tool.last_sources) > 0
@@ -57,9 +59,7 @@ class TestRealSystem:
         rag = rag_with_real_db_mocked_ai
 
         result = rag.tool_manager.execute_tool(
-            "search_course_content",
-            query="introduction",
-            lesson_number=0
+            "search_course_content", query="introduction", lesson_number=0
         )
 
         assert result is not None
@@ -72,10 +72,7 @@ class TestRealSystem:
         rag = rag_with_real_db_mocked_ai
 
         # Execute search first
-        rag.tool_manager.execute_tool(
-            "search_course_content",
-            query="Python basics"
-        )
+        rag.tool_manager.execute_tool("search_course_content", query="Python basics")
 
         # Get sources
         sources = rag.tool_manager.get_last_sources()
@@ -115,8 +112,7 @@ class TestRealSystem:
         # Simulate AI requesting tool use
         # First, execute the tool directly as AI would
         tool_result = rag.tool_manager.execute_tool(
-            "search_course_content",
-            query="computer use introduction"
+            "search_course_content", query="computer use introduction"
         )
 
         # Verify tool executed
@@ -129,7 +125,9 @@ class TestRealSystem:
         print(f"Sources from tool: {sources}")
 
         # Now mock AI response AFTER tool use
-        rag.ai_generator.generate_response.return_value = "Computer use allows Claude to control computers."
+        rag.ai_generator.generate_response.return_value = (
+            "Computer use allows Claude to control computers."
+        )
 
         # Execute query
         response, sources = rag.query("What is computer use?")
@@ -142,10 +140,7 @@ class TestRealSystem:
         """Test vector store search directly"""
         rag = rag_with_real_db_mocked_ai
 
-        results = rag.vector_store.search(
-            query="introduction to Claude",
-            limit=3
-        )
+        results = rag.vector_store.search(query="introduction to Claude", limit=3)
 
         assert not results.is_empty()
         assert len(results.documents) > 0
@@ -161,8 +156,7 @@ class TestRealSystem:
         rag = rag_with_real_db_mocked_ai
 
         result = rag.search_tool.execute(
-            query="test query",
-            course_name="Nonexistent Course XYZ"
+            query="test query", course_name="Nonexistent Course XYZ"
         )
 
         # Should get error message about course not found
@@ -174,8 +168,7 @@ class TestRealSystem:
         rag = rag_with_real_db_mocked_ai
 
         result = rag.tool_manager.execute_tool(
-            "get_course_outline",
-            course_name="Building"
+            "get_course_outline", course_name="Building"
         )
 
         assert result is not None

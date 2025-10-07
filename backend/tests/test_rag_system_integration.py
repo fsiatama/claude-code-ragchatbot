@@ -36,10 +36,12 @@ class TestRAGSystemIntegration:
     @pytest.fixture
     def rag_system_with_mocks(self, mock_config):
         """Create a RAG system with mocked components"""
-        with patch('rag_system.VectorStore') as MockVectorStore, \
-             patch('rag_system.AIGenerator') as MockAIGenerator, \
-             patch('rag_system.SessionManager') as MockSessionManager, \
-             patch('rag_system.DocumentProcessor') as MockDocumentProcessor:
+        with (
+            patch("rag_system.VectorStore") as MockVectorStore,
+            patch("rag_system.AIGenerator") as MockAIGenerator,
+            patch("rag_system.SessionManager") as MockSessionManager,
+            patch("rag_system.DocumentProcessor") as MockDocumentProcessor,
+        ):
 
             # Setup mocks
             mock_vector_store = Mock()
@@ -67,7 +69,9 @@ class TestRAGSystemIntegration:
 
         # Setup mocks
         rag.session_manager.get_conversation_history.return_value = None
-        rag.ai_generator.generate_response.return_value = "This is the answer about Python"
+        rag.ai_generator.generate_response.return_value = (
+            "This is the answer about Python"
+        )
         rag.tool_manager.get_last_sources.return_value = [
             {"text": "Python Course - Lesson 1", "url": "https://example.com/lesson1"}
         ]
@@ -96,22 +100,24 @@ class TestRAGSystemIntegration:
         # Setup mocks
         history = "User: What is Python?\nAssistant: Python is a programming language."
         rag.session_manager.get_conversation_history.return_value = history
-        rag.ai_generator.generate_response.return_value = "Python is used for web development"
+        rag.ai_generator.generate_response.return_value = (
+            "Python is used for web development"
+        )
         rag.tool_manager.get_last_sources.return_value = []
 
         # Execute query
         response, sources = rag.query("What is it used for?", session_id="session_123")
 
         # Verify history was used
-        rag.session_manager.get_conversation_history.assert_called_once_with("session_123")
+        rag.session_manager.get_conversation_history.assert_called_once_with(
+            "session_123"
+        )
         call_args = rag.ai_generator.generate_response.call_args[1]
         assert call_args["conversation_history"] == history
 
         # Verify session was updated
         rag.session_manager.add_exchange.assert_called_once_with(
-            "session_123",
-            "What is it used for?",
-            "Python is used for web development"
+            "session_123", "What is it used for?", "Python is used for web development"
         )
 
     def test_query_updates_session_history(self, rag_system_with_mocks):
@@ -127,9 +133,7 @@ class TestRAGSystemIntegration:
 
         # Verify session was updated with query and response
         rag.session_manager.add_exchange.assert_called_once_with(
-            "session_456",
-            query_text,
-            "Answer"
+            "session_456", query_text, "Answer"
         )
 
     def test_query_passes_tools_to_ai_generator(self, rag_system_with_mocks):
@@ -173,7 +177,7 @@ class TestRAGSystemIntegration:
         rag.ai_generator.generate_response.return_value = "Response"
         rag.tool_manager.get_last_sources.return_value = [
             {"text": "Course", "url": "http://example.com"},
-            {"text": "Course 2", "url": None}
+            {"text": "Course 2", "url": None},
         ]
 
         response, sources = rag.query("Test")
@@ -220,10 +224,12 @@ class TestRAGSystemIntegration:
 
     def test_tool_manager_registers_tools(self, mock_config):
         """Test that tool manager has tools registered"""
-        with patch('rag_system.VectorStore'), \
-             patch('rag_system.AIGenerator'), \
-             patch('rag_system.SessionManager'), \
-             patch('rag_system.DocumentProcessor'):
+        with (
+            patch("rag_system.VectorStore"),
+            patch("rag_system.AIGenerator"),
+            patch("rag_system.SessionManager"),
+            patch("rag_system.DocumentProcessor"),
+        ):
 
             rag = RAGSystem(mock_config)
 
@@ -250,7 +256,9 @@ class TestRAGSystemIntegration:
         # Verify outline tool has access to vector store
         assert rag.outline_tool.store == rag.vector_store
 
-    def test_query_without_session_doesnt_call_session_methods(self, rag_system_with_mocks):
+    def test_query_without_session_doesnt_call_session_methods(
+        self, rag_system_with_mocks
+    ):
         """Test that without session_id, session methods aren't called unnecessarily"""
         rag = rag_system_with_mocks
 
@@ -283,7 +291,9 @@ class TestRAGSystemIntegration:
 
         rag.vector_store.get_course_count.return_value = 3
         rag.vector_store.get_existing_course_titles.return_value = [
-            "Course 1", "Course 2", "Course 3"
+            "Course 1",
+            "Course 2",
+            "Course 3",
         ]
 
         analytics = rag.get_course_analytics()
@@ -298,11 +308,12 @@ class TestRAGSystemIntegration:
 
         # Mock vector store search
         from vector_store import SearchResults
+
         mock_results = SearchResults(
             documents=["Content about Python"],
             metadata=[{"course_title": "Python Course", "lesson_number": 1}],
             distances=[0.3],
-            error=None
+            error=None,
         )
         rag.vector_store.search.return_value = mock_results
         rag.vector_store.get_lesson_link.return_value = "https://example.com/lesson1"
@@ -319,19 +330,17 @@ class TestRAGSystemIntegration:
         rag = rag_system_with_mocks
 
         from vector_store import SearchResults
+
         mock_results = SearchResults(
             documents=["Result"],
             metadata=[{"course_title": "Course", "lesson_number": 1}],
             distances=[0.1],
-            error=None
+            error=None,
         )
         rag.vector_store.search.return_value = mock_results
 
         # Execute via tool manager
-        result = rag.tool_manager.execute_tool(
-            "search_course_content",
-            query="test"
-        )
+        result = rag.tool_manager.execute_tool("search_course_content", query="test")
 
         assert "Course" in result
 
@@ -340,11 +349,12 @@ class TestRAGSystemIntegration:
         rag = rag_system_with_mocks
 
         from vector_store import SearchResults
+
         mock_results = SearchResults(
             documents=["Content"],
             metadata=[{"course_title": "Test Course", "lesson_number": 1}],
             distances=[0.1],
-            error=None
+            error=None,
         )
         rag.vector_store.search.return_value = mock_results
         rag.vector_store.get_lesson_link.return_value = "https://example.com/lesson1"
@@ -377,23 +387,19 @@ class TestRAGSystemIntegration:
         rag = rag_system_with_mocks
 
         from vector_store import SearchResults
+
         mock_results = SearchResults(
             documents=["Content"],
             metadata=[{"course_title": "Python Course", "lesson_number": 2}],
             distances=[0.2],
-            error=None
+            error=None,
         )
         rag.vector_store.search.return_value = mock_results
 
         # Execute search with course filter
-        result = rag.search_tool.execute(
-            query="variables",
-            course_name="Python"
-        )
+        result = rag.search_tool.execute(query="variables", course_name="Python")
 
         # Verify search was called with course_name
         rag.vector_store.search.assert_called_once_with(
-            query="variables",
-            course_name="Python",
-            lesson_number=None
+            query="variables", course_name="Python", lesson_number=None
         )

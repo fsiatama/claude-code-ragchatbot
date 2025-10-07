@@ -9,7 +9,7 @@ import pytest
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from config import config
 from rag_system import RAGSystem
@@ -31,7 +31,9 @@ class TestEndToEndWithAPI:
         )
 
         print(f"\n{'='*70}")
-        print("QUERY: What is lesson 0 about in the Building Towards Computer Use course?")
+        print(
+            "QUERY: What is lesson 0 about in the Building Towards Computer Use course?"
+        )
         print(f"{'='*70}")
         print(f"RESPONSE: {response}")
         print(f"\nSOURCES ({len(sources)}):")
@@ -53,9 +55,7 @@ class TestEndToEndWithAPI:
 
     def test_course_outline_query(self, rag_system):
         """Test a query that should use the outline tool"""
-        response, sources = rag_system.query(
-            "What lessons are in the MCP course?"
-        )
+        response, sources = rag_system.query("What lessons are in the MCP course?")
 
         print(f"\n{'='*70}")
         print("QUERY: What lessons are in the MCP course?")
@@ -75,9 +75,7 @@ class TestEndToEndWithAPI:
 
     def test_general_knowledge_query(self, rag_system):
         """Test a general knowledge query that shouldn't use tools"""
-        response, sources = rag_system.query(
-            "What is 2 + 2?"
-        )
+        response, sources = rag_system.query("What is 2 + 2?")
 
         print(f"\n{'='*70}")
         print("QUERY: What is 2 + 2?")
@@ -101,7 +99,9 @@ class TestEndToEndWithAPI:
         )
 
         print(f"\n{'='*70}")
-        print("QUERY: What does the Building Towards Computer Use course teach about tool use?")
+        print(
+            "QUERY: What does the Building Towards Computer Use course teach about tool use?"
+        )
         print(f"{'='*70}")
         print(f"RESPONSE: {response}")
         print(f"\nSOURCES ({len(sources)}):")

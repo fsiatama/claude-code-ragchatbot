@@ -39,6 +39,57 @@ ANTHROPIC_API_KEY=your_key_here
 uv sync
 ```
 
+## Code Quality Tools
+
+This project uses automated code quality tools to maintain consistency and catch issues early.
+
+**Tools:**
+- **Black**: Automatic code formatting (88 character line length)
+- **Ruff**: Fast Python linter with import sorting
+- **Mypy**: Static type checker
+
+**Configuration:** All tools are configured in `pyproject.toml`
+
+### Running Quality Checks
+
+**Format code:**
+```bash
+# Linux/Mac
+./scripts/format.sh
+
+# Windows
+scripts\format.bat
+```
+
+**Check linting:**
+```bash
+# Linux/Mac
+./scripts/lint.sh
+
+# Windows
+scripts\lint.bat
+```
+
+**Run type checking:**
+```bash
+# Linux/Mac
+./scripts/typecheck.sh
+
+# Windows
+scripts\typecheck.bat
+```
+
+**Run all checks:**
+```bash
+# Linux/Mac
+./scripts/check-all.sh
+
+# Windows
+scripts\check-all.bat
+```
+
+**Best Practice:** Run `./scripts/format.sh` before committing code. The formatter automatically fixes most style issues.
+
 ## Architecture
 
 ### RAG System Flow (Tool-Based)

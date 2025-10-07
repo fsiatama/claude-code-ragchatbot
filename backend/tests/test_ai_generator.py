@@ -19,7 +19,7 @@ class TestAIGenerator:
     @pytest.fixture
     def mock_anthropic_client(self):
         """Create a mock Anthropic client"""
-        with patch('ai_generator.anthropic.Anthropic') as mock_anthropic:
+        with patch("ai_generator.anthropic.Anthropic") as mock_anthropic:
             mock_client = Mock()
             mock_anthropic.return_value = mock_client
             yield mock_client
@@ -33,7 +33,7 @@ class TestAIGenerator:
 
     def test_initialization(self):
         """Test AIGenerator initializes with correct parameters"""
-        with patch('ai_generator.anthropic.Anthropic') as mock_anthropic:
+        with patch("ai_generator.anthropic.Anthropic") as mock_anthropic:
             generator = AIGenerator(api_key="test-api-key", model="test-model")
 
             mock_anthropic.assert_called_once_with(api_key="test-api-key")
@@ -61,7 +61,9 @@ class TestAIGenerator:
         assert call_args["messages"][0]["content"] == "What is Python?"
         assert "tools" not in call_args
 
-    def test_generate_response_with_conversation_history(self, ai_generator, mock_anthropic_client):
+    def test_generate_response_with_conversation_history(
+        self, ai_generator, mock_anthropic_client
+    ):
         """Test response generation includes conversation history"""
         mock_response = Mock()
         mock_response.stop_reason = "end_turn"
@@ -71,15 +73,16 @@ class TestAIGenerator:
         conversation_history = "User: Previous question\nAssistant: Previous answer"
 
         result = ai_generator.generate_response(
-            query="Follow-up question",
-            conversation_history=conversation_history
+            query="Follow-up question", conversation_history=conversation_history
         )
 
         assert result == "Response with history"
         call_args = mock_anthropic_client.messages.create.call_args[1]
         assert conversation_history in call_args["system"]
 
-    def test_generate_response_with_tools_provided(self, ai_generator, mock_anthropic_client):
+    def test_generate_response_with_tools_provided(
+        self, ai_generator, mock_anthropic_client
+    ):
         """Test that tools are passed to API when provided"""
         mock_response = Mock()
         mock_response.stop_reason = "end_turn"
@@ -88,16 +91,15 @@ class TestAIGenerator:
 
         tools = [{"name": "test_tool", "description": "A test tool"}]
 
-        result = ai_generator.generate_response(
-            query="Test query",
-            tools=tools
-        )
+        result = ai_generator.generate_response(query="Test query", tools=tools)
 
         call_args = mock_anthropic_client.messages.create.call_args[1]
         assert call_args["tools"] == tools
         assert call_args["tool_choice"] == {"type": "auto"}
 
-    def test_generate_response_handles_tool_use(self, ai_generator, mock_anthropic_client):
+    def test_generate_response_handles_tool_use(
+        self, ai_generator, mock_anthropic_client
+    ):
         """Test that tool_use stop_reason triggers tool execution"""
         # Setup mock initial response with tool use
         mock_tool_use_block = Mock()
@@ -118,7 +120,7 @@ class TestAIGenerator:
         # Configure mock to return different responses
         mock_anthropic_client.messages.create.side_effect = [
             mock_initial_response,
-            mock_final_response
+            mock_final_response,
         ]
 
         # Setup mock tool manager
@@ -128,15 +130,12 @@ class TestAIGenerator:
         tools = [{"name": "search_course_content", "description": "Search tool"}]
 
         result = ai_generator.generate_response(
-            query="Test query",
-            tools=tools,
-            tool_manager=mock_tool_manager
+            query="Test query", tools=tools, tool_manager=mock_tool_manager
         )
 
         # Verify tool was executed
         mock_tool_manager.execute_tool.assert_called_once_with(
-            "search_course_content",
-            query="Python basics"
+            "search_course_content", query="Python basics"
         )
 
         # Verify second API call was made
@@ -145,7 +144,9 @@ class TestAIGenerator:
         # Verify final response
         assert result == "Final response after tool use"
 
-    def test_handle_tool_execution_builds_correct_messages(self, ai_generator, mock_anthropic_client):
+    def test_handle_tool_execution_builds_correct_messages(
+        self, ai_generator, mock_anthropic_client
+    ):
         """Test that _handle_tool_execution builds correct message structure"""
         # Setup mock tool use response
         mock_tool_use_block = Mock()
@@ -164,25 +165,23 @@ class TestAIGenerator:
 
         # Setup mock tool manager
         mock_tool_manager = Mock()
-        mock_tool_manager.execute_tool.return_value = "[Python Course - Lesson 1]\nContent here"
+        mock_tool_manager.execute_tool.return_value = (
+            "[Python Course - Lesson 1]\nContent here"
+        )
 
         # Setup base params
         base_params = {
             "messages": [{"role": "user", "content": "Original query"}],
-            "system": "System prompt"
+            "system": "System prompt",
         }
 
         result = ai_generator._handle_tool_execution(
-            mock_initial_response,
-            base_params,
-            mock_tool_manager
+            mock_initial_response, base_params, mock_tool_manager
         )
 
         # Verify tool was executed
         mock_tool_manager.execute_tool.assert_called_once_with(
-            "search_course_content",
-            query="test",
-            course_name="Python"
+            "search_course_content", query="test", course_name="Python"
         )
 
         # Verify API call structure
@@ -202,7 +201,9 @@ class TestAIGenerator:
         assert tool_results[0]["tool_use_id"] == "tool_456"
         assert "[Python Course - Lesson 1]" in tool_results[0]["content"]
 
-    def test_handle_tool_execution_no_tools_in_final_call(self, ai_generator, mock_anthropic_client):
+    def test_handle_tool_execution_no_tools_in_final_call(
+        self, ai_generator, mock_anthropic_client
+    ):
         """Test that final API call after tool execution does not include tools"""
         mock_tool_use_block = Mock()
         mock_tool_use_block.type = "tool_use"
@@ -224,13 +225,11 @@ class TestAIGenerator:
             "messages": [{"role": "user", "content": "Query"}],
             "system": "System prompt",
             "tools": [{"name": "search_course_content"}],
-            "tool_choice": {"type": "auto"}
+            "tool_choice": {"type": "auto"},
         }
 
         result = ai_generator._handle_tool_execution(
-            mock_initial_response,
-            base_params,
-            mock_tool_manager
+            mock_initial_response, base_params, mock_tool_manager
         )
 
         # Verify final call does not include tools
@@ -265,13 +264,11 @@ class TestAIGenerator:
 
         base_params = {
             "messages": [{"role": "user", "content": "Query"}],
-            "system": "System"
+            "system": "System",
         }
 
         result = ai_generator._handle_tool_execution(
-            mock_initial_response,
-            base_params,
-            mock_tool_manager
+            mock_initial_response, base_params, mock_tool_manager
         )
 
         # Verify both tools were executed
@@ -308,7 +305,9 @@ class TestAIGenerator:
         mock_anthropic_client.messages.create.assert_called_once()
         assert result == "Response"
 
-    def test_tool_execution_with_mixed_content_blocks(self, ai_generator, mock_anthropic_client):
+    def test_tool_execution_with_mixed_content_blocks(
+        self, ai_generator, mock_anthropic_client
+    ):
         """Test tool execution when response has mixed content types"""
         mock_text_block = Mock()
         mock_text_block.type = "text"
@@ -332,13 +331,11 @@ class TestAIGenerator:
 
         base_params = {
             "messages": [{"role": "user", "content": "Query"}],
-            "system": "System"
+            "system": "System",
         }
 
         result = ai_generator._handle_tool_execution(
-            mock_initial_response,
-            base_params,
-            mock_tool_manager
+            mock_initial_response, base_params, mock_tool_manager
         )
 
         # Should only execute tool blocks, not text blocks
